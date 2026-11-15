@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Joytech Admin</title>
+<style>
+:root{--navy:#0b1f4b;--navy2:#16336f;--cream:#fbf7ee;--blue:#1f5fff;--gray:#e8ecf3;--line:#d5dce8;--red:#c0262d;--green:#128c4a;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--navy);line-height:1.5}
+button,input,select{font:inherit}button{cursor:pointer}
+.bar{background:var(--navy);color:#fff;padding:.8rem 4%;display:flex;align-items:center;gap:1rem}.bar b{font-size:1.15rem;margin-right:auto}
+.wrap{width:min(1100px,92%);margin:1.2rem auto 4rem}
+.btn{border:0;border-radius:999px;padding:.6rem 1.2rem;min-height:44px;font-weight:700;background:var(--blue);color:#fff}.btn.o{background:#fff;color:var(--navy);border:1px solid var(--navy)}.btn.d{background:var(--red)}.btn.g{background:var(--green)}.btn.sm{min-height:38px;padding:.3rem .9rem;font-size:.9rem}
+input,select{width:100%;min-height:44px;padding:.5rem .8rem;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--navy)}label{display:block;font-weight:700;font-size:.88rem;margin:.8rem 0 .25rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.2rem}
+#login{max-width:420px;margin:12vh auto}.err{color:var(--red);font-weight:700;min-height:1.4em}
+.tools{display:grid;grid-template-columns:1fr 200px auto;gap:.7rem;margin-bottom:1rem}
+.row{display:grid;grid-template-columns:64px 1fr 130px auto;gap:.9rem;align-items:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:.7rem;margin-bottom:.6rem}
+.row.hid{opacity:.6}.th{width:64px;height:64px;border-radius:12px;background:var(--gray);object-fit:cover;display:grid;place-items:center;font-size:.7rem;color:#667}
+.nm{font-weight:700}.ct{font-size:.8rem;color:#4a5878}
+.pr{display:flex;align-items:center;gap:.3rem}.pr input{text-align:right}
+.act{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:.25rem .7rem;font-size:.8rem;font-weight:700;color:var(--navy)}.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ov{position:fixed;inset:0;background:rgba(5,14,38,.6);display:none;place-items:center;padding:1rem;z-index:10}.ov.on{display:grid}.md{background:var(--cream);border-radius:22px;width:min(560px,100%);max-height:94vh;overflow:auto;padding:1.4rem}
+.pv{width:100%;max-height:220px;object-fit:contain;background:var(--gray);border-radius:14px;margin-top:.4rem;display:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.chk{display:flex;gap:1.2rem;margin-top:.8rem}.chk label{display:flex;gap:.4rem;align-items:center;margin:0}.chk input{width:auto;min-height:0}
+.toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;background:var(--navy);color:#fff;padding:.7rem 1.2rem;border-radius:99px;font-weight:700;opacity:0;transition:.3s;pointer-events:none;z-index:20}.toast.on{opacity:1}
+.hint{color:#4a5878;font-size:.9rem}
+@media(max-width:720px){.tools{grid-template-columns:1fr}.row{grid-template-columns:56px 1fr;}.row .pr,.row .act{grid-column:1/-1}.act{justify-content:flex-start}.two{grid-template-columns:1fr}.th{width:56px;height:56px}}
+</style>
+</head>
+<body>
+<div class="bar"><b>Joytech Admin</b><span id="who" class="hint" style="color:#c9d6f5"></span><button class="btn o sm" id="out" hidden>Sign out</button></div>
+
+<div id="login" class="card" hidden>
+ <h2 style="margin-top:0">Owner sign in</h2>
+ <label for="em">Email</label><input id="em" type="email" autocomplete="username">
+ <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+ <p class="err" id="le"></p><button class="btn" id="go" style="width:100%">Sign in</button>
+</div>
+
+<div class="wrap" id="app" hidden>
+ <div class="tools"><input id="q" type="search" placeholder="Search products…" aria-label="Search"><select id="cf" aria-label="Category"></select><button class="btn" id="add">+ Add product</button></div>
+ <p class="hint" id="cnt"></p><div id="list"></div>
+</div>
+<p class="wrap err" id="cfg" hidden>Set your Supabase URL and anon key at the top of this file (the SB line). See SETUP.txt.</p>
+
+<div class="ov" id="ov" role="dialog" aria-modal="true"><form class="md" id="f">
+ <h2 id="ft" style="margin-top:0">Add product</h2>
+ <label for="fn">Name</label><input id="fn" required maxlength="120">
+ <div class="two"><div><label for="fc">Category</label><select id="fc" required></select></div><div><label for="fp">Price (KES, leave empty for "Ask for price")</label><input id="fp" type="number" min="0" step="1" inputmode="numeric"></div></div>
+ <label for="fi">Photo</label><input id="fi" type="file" accept="image/*"><img class="pv" id="pv" alt="Preview">
+ <div class="chk"><label><input type="checkbox" id="fv" checked> Visible on shop</label><label><input type="checkbox" id="ff"> Featured on home</label></div>
+ <label for="fs">Sort order (small numbers first)</label><input id="fs" type="number" step="1" value="0">
+ <p class="err" id="fe"></p>
+ <div style="display:flex;gap:.6rem;justify-content:flex-end"><button type="button" class="btn o" id="cx">Cancel</button><button class="btn g" id="sv">Save</button></div>
+</form></div>
+<div class="toast" id="ts" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB={url:'',key:''}; // paste your Supabase Project URL and anon public key here
+const BUCKET='product-images';
+const CATS=[['tvs','TVs'],['phones','Phones'],['laptops','Laptops & Computers'],['hifi','Hi-Fi & Woofers'],['acc','Accessories'],['fridges','Fridges'],['ovens','Ovens & Cookers'],['dispensers','Dispensers'],['gas','Gas Cylinders'],['appl','Appliances'],['couches','Couches'],['tvstands','TV Stands'],['coffee','Coffee Tables'],['furn','Furniture'],['beds','Beds'],['mattress','Mattresses'],['duvets','Duvets'],['decor','Interior & Decor'],['loans','Soft Loans']];
+const $=s=>document.querySelector(s),cl=k=>(CATS.find(c=>c[0]===k)||[0,k])[1];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let sb,rows=[],editId=null,file=null;
+function toast(m){const t=$('#ts');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200)}
+$('#cf').innerHTML='<option value="">All categories</option>'+CATS.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('');
+$('#fc').innerHTML=CATS.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('');
+function show(authed){$('#login').hidden=authed;$('#app').hidden=!authed;$('#out').hidden=!authed}
+async function boot(){
+ if(!SB.url||!SB.key||!window.supabase){$('#cfg').hidden=false;return}
+ sb=supabase.createClient(SB.url,SB.key);
+ const{data}=await sb.auth.getSession();
+ if(data.session){$('#who').textContent=data.session.user.email;show(true);load()}else show(false);
+}
+$('#go').onclick=async()=>{$('#le').textContent='';const{data,error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});
+ if(error){$('#le').textContent=error.message;return}$('#who').textContent=data.user.email;show(true);load()};
+$('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go').click()});
+$('#out').onclick=async()=>{await sb.auth.signOut();$('#who').textContent='';show(false)};
+async function load(){const{data,error}=await sb.from('products').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
+ if(error){toast('Could not load: '+error.message);return}rows=data||[];draw()}
+function thumb(r){const s=r.image_url||(r.legacy_img!=null?`img/t/${r.legacy_img}.webp`:'');return s?`<img class="th" src="${esc(s)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=th>No photo</div>'">`:'<div class="th">No photo</div>'}
+function draw(){const q=$('#q').value.trim().toLowerCase(),c=$('#cf').value;
+ const l=rows.filter(r=>(!c||r.category===c)&&(!q||(r.name+' '+cl(r.category)).toLowerCase().includes(q)));
+ $('#cnt').textContent=`${l.length} of ${rows.length} products`;
+ $('#list').innerHTML=l.map(r=>`<div class="row ${r.visible?'':'hid'}" data-id="${r.id}">${thumb(r)}<div><div class="nm">${esc(r.name)}</div><div class="ct">${esc(cl(r.category))}</div></div>
+ <div class="pr"><span>KES</span><input type="number" min="0" step="1" inputmode="numeric" value="${r.price??''}" placeholder="Ask" data-price aria-label="Price for ${esc(r.name)}"></div>
+ <div class="act"><button class="chip ${r.visible?'on':''}" data-t="visible">${r.visible?'Visible':'Hidden'}</button><button class="chip ${r.featured?'on':''}" data-t="featured">Featured</button><button class="btn o sm" data-e>Edit</button><button class="btn d sm" data-d>Delete</button></div></div>`).join('')||'<p class="hint">No products found.</p>'}
+$('#q').oninput=draw;$('#cf').onchange=draw;
+$('#list').addEventListener('change',async e=>{if(!e.target.matches('[data-price]'))return;const id=e.target.closest('.row').dataset.id,v=e.target.value.trim(),price=v===''?null:Math.max(0,Math.round(+v));
+ const{error}=await sb.from('products').update({price}).eq('id',id);if(error){toast(error.message);return}rows.find(r=>r.id===id).price=price;toast('Price saved')});
+$('#list').addEventListener('click',async e=>{const row=e.target.closest('.row');if(!row)return;const id=row.dataset.id,r=rows.find(x=>x.id===id);
+ const t=e.target.closest('[data-t]');if(t){const k=t.dataset.t,{error}=await sb.from('products').update({[k]:!r[k]}).eq('id',id);if(error){toast(error.message);return}r[k]=!r[k];draw();toast('Updated');return}
+ if(e.target.closest('[data-e]'))openForm(r);
+ if(e.target.closest('[data-d]')&&confirm(`Delete "${r.name}"? This cannot be undone.`)){const{error}=await sb.from('products').delete().eq('id',id);if(error){toast(error.message);return}rows=rows.filter(x=>x.id!==id);draw();toast('Deleted')}});
+function openForm(r){editId=r?r.id:null;file=null;$('#ft').textContent=r?'Edit product':'Add product';$('#fn').value=r?r.name:'';$('#fc').value=r?r.category:CATS[0][0];$('#fp').value=r&&r.price!=null?r.price:'';
+ $('#fv').checked=r?r.visible:true;$('#ff').checked=r?r.featured:false;$('#fs').value=r?r.sort:0;$('#fi').value='';$('#fe').textContent='';
+ const s=r&&(r.image_url||(r.legacy_img!=null?`img/t/${r.legacy_img}.webp`:''));const pv=$('#pv');pv.style.display=s?'block':'none';pv.src=s||'';$('#ov').classList.add('on')}
+$('#add').onclick=()=>openForm(null);$('#cx').onclick=()=>$('#ov').classList.remove('on');
+$('#fi').onchange=e=>{file=e.target.files[0]||null;if(file){const pv=$('#pv');pv.src=URL.createObjectURL(file);pv.style.display='block'}};
+function compress(f){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const m=1000,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+ c.toBlob(b=>b?res(b):rej(new Error('Could not process image')),'image/webp',.82)};im.onerror=()=>rej(new Error('Could not read image'));im.src=URL.createObjectURL(f)})}
+$('#f').onsubmit=async e=>{e.preventDefault();$('#fe').textContent='';$('#sv').disabled=true;$('#sv').textContent='Saving…';
+ try{const v=$('#fp').value.trim(),rec={name:$('#fn').value.trim(),category:$('#fc').value,price:v===''?null:Math.max(0,Math.round(+v)),visible:$('#fv').checked,featured:$('#ff').checked,sort:parseInt($('#fs').value)||0};
+  if(file){const blob=await compress(file),path=`products/${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+   const up=await sb.storage.from(BUCKET).upload(path,blob,{contentType:'image/webp',cacheControl:'31536000'});if(up.error)throw up.error;
+   rec.image_url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl}
+  const q=editId?sb.from('products').update(rec).eq('id',editId):sb.from('products').insert(rec);const{error}=await q;if(error)throw error;
+  $('#ov').classList.remove('on');toast('Saved');await load()}
+ catch(err){$('#fe').textContent=err.message||'Something went wrong'}
+ $('#sv').disabled=false;$('#sv').textContent='Save'};
+addEventListener('keydown',e=>{if(e.key==='Escape')$('#ov').classList.remove('on')});
+boot();
+</script>
+</body>
+</html>

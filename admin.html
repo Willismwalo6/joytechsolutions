@@ -51,7 +51,7 @@ input,select{width:100%;min-height:44px;padding:.5rem .8rem;border:1px solid var
  <label for="fn">Name</label><input id="fn" required maxlength="120">
  <div class="two"><div><label for="fc">Category</label><select id="fc" required></select></div><div><label for="fp">Price (KES, leave empty for "Ask for price")</label><input id="fp" type="number" min="0" step="1" inputmode="numeric"></div></div>
  <label for="fi">Photo</label><input id="fi" type="file" accept="image/*"><img class="pv" id="pv" alt="Preview">
- <div class="chk"><label><input type="checkbox" id="fv" checked> Visible on shop</label><label><input type="checkbox" id="ff"> Featured on home</label></div>
+ <div class="chk"><label><input type="checkbox" id="fv" checked> Visible on shop</label><label><input type="checkbox" id="ff"> Featured on home</label><label><input type="checkbox" id="fh"> Hot this week</label></div>
  <label for="fs">Sort order (small numbers first)</label><input id="fs" type="number" step="1" value="0">
  <p class="err" id="fe"></p>
  <div style="display:flex;gap:.6rem;justify-content:flex-end"><button type="button" class="btn o" id="cx">Cancel</button><button class="btn g" id="sv">Save</button></div>
@@ -88,7 +88,7 @@ function draw(){const q=$('#q').value.trim().toLowerCase(),c=$('#cf').value;
  $('#cnt').textContent=`${l.length} of ${rows.length} products`;
  $('#list').innerHTML=l.map(r=>`<div class="row ${r.visible?'':'hid'}" data-id="${r.id}">${thumb(r)}<div><div class="nm">${esc(r.name)}</div><div class="ct">${esc(cl(r.category))}</div></div>
  <div class="pr"><span>KES</span><input type="number" min="0" step="1" inputmode="numeric" value="${r.price??''}" placeholder="Ask" data-price aria-label="Price for ${esc(r.name)}"></div>
- <div class="act"><button class="chip ${r.visible?'on':''}" data-t="visible">${r.visible?'Visible':'Hidden'}</button><button class="chip ${r.featured?'on':''}" data-t="featured">Featured</button><button class="btn o sm" data-e>Edit</button><button class="btn d sm" data-d>Delete</button></div></div>`).join('')||'<p class="hint">No products found.</p>'}
+ <div class="act"><button class="chip ${r.visible?'on':''}" data-t="visible">${r.visible?'Visible':'Hidden'}</button><button class="chip ${r.featured?'on':''}" data-t="featured">Featured</button><button class="chip ${r.hot?'on':''}" data-t="hot">Hot this week</button><button class="btn o sm" data-e>Edit</button><button class="btn d sm" data-d>Delete</button></div></div>`).join('')||'<p class="hint">No products found.</p>'}
 $('#q').oninput=draw;$('#cf').onchange=draw;
 $('#list').addEventListener('change',async e=>{if(!e.target.matches('[data-price]'))return;const id=e.target.closest('.row').dataset.id,v=e.target.value.trim(),price=v===''?null:Math.max(0,Math.round(+v));
  const{error}=await sb.from('products').update({price}).eq('id',id);if(error){toast(error.message);return}rows.find(r=>r.id===id).price=price;toast('Price saved')});
@@ -97,14 +97,14 @@ $('#list').addEventListener('click',async e=>{const row=e.target.closest('.row')
  if(e.target.closest('[data-e]'))openForm(r);
  if(e.target.closest('[data-d]')&&confirm(`Delete "${r.name}"? This cannot be undone.`)){const{error}=await sb.from('products').delete().eq('id',id);if(error){toast(error.message);return}rows=rows.filter(x=>x.id!==id);draw();toast('Deleted')}});
 function openForm(r){editId=r?r.id:null;file=null;$('#ft').textContent=r?'Edit product':'Add product';$('#fn').value=r?r.name:'';$('#fc').value=r?r.category:CATS[0][0];$('#fp').value=r&&r.price!=null?r.price:'';
- $('#fv').checked=r?r.visible:true;$('#ff').checked=r?r.featured:false;$('#fs').value=r?r.sort:0;$('#fi').value='';$('#fe').textContent='';
+ $('#fv').checked=r?r.visible:true;$('#ff').checked=r?r.featured:false;$('#fh').checked=r?!!r.hot:false;$('#fs').value=r?r.sort:0;$('#fi').value='';$('#fe').textContent='';
  const s=r&&r.image_url;const pv=$('#pv');pv.style.display=s?'block':'none';pv.src=s||'';$('#ov').classList.add('on')}
 $('#add').onclick=()=>openForm(null);$('#cx').onclick=()=>$('#ov').classList.remove('on');
 $('#fi').onchange=e=>{file=e.target.files[0]||null;if(file){const pv=$('#pv');pv.src=URL.createObjectURL(file);pv.style.display='block'}};
 function compress(f){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const m=1000,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
  c.toBlob(b=>b?res(b):rej(new Error('Could not process image')),'image/webp',.82)};im.onerror=()=>rej(new Error('Could not read image'));im.src=URL.createObjectURL(f)})}
 $('#f').onsubmit=async e=>{e.preventDefault();$('#fe').textContent='';$('#sv').disabled=true;$('#sv').textContent='Saving…';
- try{const v=$('#fp').value.trim(),rec={name:$('#fn').value.trim(),category:$('#fc').value,price:v===''?null:Math.max(0,Math.round(+v)),visible:$('#fv').checked,featured:$('#ff').checked,sort:parseInt($('#fs').value)||0};
+ try{const v=$('#fp').value.trim(),rec={name:$('#fn').value.trim(),category:$('#fc').value,price:v===''?null:Math.max(0,Math.round(+v)),visible:$('#fv').checked,featured:$('#ff').checked,hot:$('#fh').checked,sort:parseInt($('#fs').value)||0};
   if(file){const blob=await compress(file),path=`products/${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
    const up=await sb.storage.from(BUCKET).upload(path,blob,{contentType:'image/webp',cacheControl:'31536000'});if(up.error)throw up.error;
    rec.image_url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl}
